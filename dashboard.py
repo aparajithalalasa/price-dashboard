@@ -1,19 +1,46 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from sklearn.linear_model import LinearRegression
-import numpy as np
 import requests
 
 st.set_page_config(layout="wide")
-st.title("📊 Product Sales Dashboard with Forecasting")
+st.title("📊 Product Sales Dashboard")
 
-# Upload CSV
-uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
+# --- Sidebar: About Me ---
+st.sidebar.header("👩‍💼 About Me")
+
+st.sidebar.markdown("""
+**Aparajitha Lalasa Molugu**  
+Data Analyst | 5+ Yrs Exp at Amazon  
+📍 Hyderabad, India
+
+📧 [Email me](mailto:aparajitha.lalasa@gmail.com)  
+🔗 [LinkedIn](https://www.linkedin.com/in/aparajitha-molugu-22543515a/)  
+💻 [GitHub](https://github.com/aparajithalalasa)
+""")
+
+resume_url = "https://raw.githubusercontent.com//aparajithalalasa/price-dashboard/main/Aparajitha_Lalasa_Molugu_Updated_Resume.pdf"
+try:
+    response = requests.get(resume_url)
+    if response.status_code == 200:
+        st.sidebar.download_button(
+            label="📄 Download Resume",
+            data=response.content,
+            file_name="Aparajitha_Resume.pdf",
+            mime="application/pdf"
+        )
+    else:
+        st.sidebar.warning("Resume not available at the moment.")
+except Exception:
+    st.sidebar.error("Error fetching resume.")
+
+# --- File Upload ---
+uploaded_file = st.file_uploader("📁 Upload a CSV file", type=["csv"])
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
 
+    # Parse date column
     if 'date' in df.columns:
         df['date'] = pd.to_datetime(df['date'], errors='coerce')
 
@@ -23,9 +50,8 @@ if uploaded_file is not None:
     required_cols = {'product_id', 'price', 'units_sold', 'date'}
     if required_cols.issubset(df.columns):
 
+        # Filters
         col1, col2 = st.columns(2)
-
-        # Optional category filter
         if 'category' in df.columns:
             with col1:
                 category_filter = st.selectbox("Filter by Category", ['All'] + sorted(df['category'].dropna().unique()))
@@ -43,69 +69,57 @@ if uploaded_file is not None:
 
         st.markdown("### 📊 Key Metrics")
         kpi1, kpi2, kpi3 = st.columns(3)
-        kpi1.metric(label="Total Units Sold", value=f"{total_units:,}")
-        kpi2.metric(label="Total Revenue (₹)", value=f"₹ {total_revenue:,.0f}")
-        kpi3.metric(label="Average Price", value=f"₹ {avg_price:,.0f}")
+        kpi1.metric("Total Units Sold", f"{total_units:,}")
+        kpi2.metric("Total Revenue (₹)", f"₹ {total_revenue:,.0f}")
+        kpi3.metric("Average Price", f"₹ {avg_price:,.0f}")
 
         # Forecast toggle
         forecast_days = 0
         forecast = st.checkbox("🔮 Enable Sales Forecasting")
         if forecast:
             forecast_days = st.slider("Select how many future days to predict", 7, 90, 30)
-# --- Sidebar: About Me ---
-st.sidebar.header("👩‍💼 About Me")
 
-st.sidebar.markdown("""
-**Aparajitha Lalasa Molugu**  
-Data Analyst | 5+ Yrs Exp @ Amazon  
-📍 Hyderabad, India
+        if not df.empty:
+            df = df.dropna(subset=['date', 'units_sold'])
+            df = df.sort_values('date')
+            df['date_ordinal'] = df['date'].map(pd.Timestamp.toordinal)
 
-📧 [Email me](mailto:aparajitha.lalasa@gmail.com)  
-🔗 [LinkedIn](https://www.linkedin.com/in/aparajitha-molugu-22543515a/)  
-💻 [GitHub](https://github.com/aparajithalalasa)
-""")
+            fig = go.Figure()
+            fig.add_trace(go.Bar(x=df['date'], y=df['units_sold'], name="Units Sold"))
 
-resume_url = "https://raw.githubusercontent.com//aparajithalalasa/price-dashboard/main/Aparajitha_Lalasa_Molugu_Updated_Resume.pdf"
-st.sidebar.download_button(
-    label="📄 Download Resume",
-    data=requests.get(resume_url).content,
-    file_name="Aparajitha_Resume.pdf",
-    mime="application/pdf"
-)
+            if forecast and len(df) > 1:
+                from sklearn.linear_model import LinearRegression
+                import numpy as np
 
-       # Chart section with optional forecasting
-df = df.dropna(subset=['date', 'units_sold'])  # ✅ Make sure this is properly aligned
-df = df.sort_values('date')
-df['date_ordinal'] = df['date'].map(pd.Timestamp.toordinal)
+                X = df[['date_ordinal']]
+                y = df['units_sold']
+                model = LinearRegression().fit(X, y)
 
-fig = go.Figure()
-fig.add_trace(go.Bar(x=df['date'], y=df['units_sold'], name="Units Sold"))
+                last_date = df['date'].max()
+                future_dates = pd.date_range(last_date + pd.Timedelta(days=1), periods=forecast_days)
+                future_ordinals = future_dates.map(pd.Timestamp.toordinal)
+                predictions = model.predict(future_ordinals.to_numpy().reshape(-1, 1))
 
-if forecast and len(df) > 1:
-    # Prepare model
-    X = df[['date_ordinal']]
-    y = df['units_sold']
-    model = LinearRegression().fit(X, y)
+                fig.add_trace(go.Scatter(
+                    x=future_dates,
+                    y=predictions,
+                    mode='lines+markers',
+                    name='Predicted Units Sold',
+                    line=dict(dash='dot')
+                ))
 
-    last_date = df['date'].max()
-    future_dates = pd.date_range(last_date + pd.Timedelta(days=1), periods=forecast_days)
-    future_ordinals = future_dates.map(pd.Timestamp.toordinal)
-    predictions = model.predict(future_ordinals.to_numpy().reshape(-1, 1))
+            fig.update_layout(
+                title=f"📈 Sales Trend for Product {product_filter}",
+                xaxis_title="Date",
+                yaxis_title="Units Sold",
+                height=500
+            )
 
-    # Plot prediction line
-    fig.add_trace(go.Scatter(
-        x=future_dates,
-        y=predictions,
-        mode='lines+markers',
-        name='Predicted Units Sold',
-        line=dict(dash='dot')
-    ))
+            st.plotly_chart(fig, use_container_width=True)
 
-fig.update_layout(
-    title=f"📈 Sales Trend for Product {product_filter}",
-    xaxis_title="Date",
-    yaxis_title="Units Sold",
-    height=500
-)
-
-st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.warning("No data available for the selected filters.")
+    else:
+        st.error(f"❌ Missing columns: {required_cols - set(df.columns)}")
+else:
+    st.info("📁 Please upload a CSV file to begin.")
