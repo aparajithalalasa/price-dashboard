@@ -51,6 +51,26 @@ if uploaded_file is not None:
         forecast = st.checkbox("🔮 Enable Sales Forecasting")
         if forecast:
             forecast_days = st.slider("Select how many future days to predict", 7, 90, 30)
+# --- Sidebar: About Me ---
+st.sidebar.header("👩‍💼 About Me")
+
+st.sidebar.markdown("""
+**Aparajitha Lalasa Molugu**  
+Data Analyst | 5+ Yrs Exp @ Amazon  
+📍 Hyderabad, India
+
+📧 [Email me](mailto:aparajitha.lalasa@gmail.com)  
+🔗 [LinkedIn](https://www.linkedin.com/in/aparajitha-molugu-22543515a/)  
+💻 [GitHub](https://github.com/aparajithalalasa)
+""")
+
+resume_url = "https://raw.githubusercontent.com//aparajithalalasa/price-dashboard/main/Aparajitha_Lalasa_Molugu_Updated_Resume.pdf"
+st.sidebar.download_button(
+    label="📄 Download Resume",
+    data=requests.get(resume_url).content,
+    file_name="Aparajitha_Resume.pdf",
+    mime="application/pdf"
+)
 
         # Chart
         df = df.dropna(subset=['date', 'units_sold'])
