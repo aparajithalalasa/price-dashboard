@@ -2,64 +2,44 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-# Sample data
-data = {
-    'date': ['2024-01-01', '2024-01-15', '2024-01-01', '2024-01-15'],
-    'product_id': [101, 101, 102, 102],
-    'category': ['Mobile', 'Mobile', 'Laptop', 'Laptop'],
-    'price': [70000, 65000, 80000, 80000],
-    'units_sold': [200, 320, 50, 60]
-}
+st.set_page_config(layout="wide")
+st.title("📊 Product Price vs Sales Dashboard")
 
-df = pd.DataFrame(data)
-df['date'] = pd.to_datetime(df['date'])
+# 📁 Upload Section
+uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
 
-st.title("📊 Price vs Sales Dashboard")
-st.markdown("Compare how price changes affect product sales.")
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
 
-# Product selection
-product_ids = df['product_id'].unique()
-selected_product = st.selectbox("Select a Product ID", product_ids)
+    # Try converting date if possible
+    if 'date' in df.columns:
+        df['date'] = pd.to_datetime(df['date'], errors='coerce')
 
-# Filter data for the selected product
-filtered = df[df['product_id'] == selected_product].sort_values('date')
-dates = filtered['date'].dt.strftime('%Y-%m-%d').tolist()
+    st.success("✅ File uploaded successfully!")
+    st.write("### Preview of Uploaded Data", df.head())
 
-# Create figure
-fig = go.Figure()
+    # Check required columns
+    required_cols = {'product_id', 'price', 'units_sold', 'date'}
+    if required_cols.issubset(set(df.columns)):
 
-# Bar: Units sold
-fig.add_trace(go.Bar(
-    x=dates,
-    y=filtered['units_sold'],
-    name='Units Sold',
-    marker_color='skyblue'
-))
+        # Dropdown to select product_id
+        selected = st.selectbox("Choose Product ID", df["product_id"].unique())
+        filtered = df[df["product_id"] == selected].sort_values("date")
 
-# Line: Price
-fig.add_trace(go.Scatter(
-    x=dates,
-    y=filtered['price'],
-    name='Price',
-    yaxis='y2',
-    mode='lines+markers',
-    marker=dict(color='orange')
-))
+        fig = go.Figure()
+        fig.add_trace(go.Bar(x=filtered["date"], y=filtered["units_sold"], name="Units Sold"))
+        fig.add_trace(go.Scatter(x=filtered["date"], y=filtered["price"], yaxis="y2", name="Price"))
 
-# Layout config
-fig.update_layout(
-    title=f"Product {selected_product} - Price vs Units Sold",
-    xaxis_title="Date",
-    yaxis=dict(title="Units Sold"),
-    yaxis2=dict(
-        title="Price",
-        overlaying='y',
-        side='right',
-        showgrid=False
-    ),
-    height=500,
-    legend=dict(x=0.5, y=1.15, orientation="h")
-)
+        fig.update_layout(
+            yaxis=dict(title="Units Sold"),
+            yaxis2=dict(title="Price", overlaying="y", side="right"),
+            title=f"Product {selected} - Sales vs Price"
+        )
 
-# Display chart
-st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True)
+
+    else:
+        st.error(f"❌ Required columns not found: {required_cols - set(df.columns)}")
+
+else:
+    st.info("👈 Please upload a CSV file to begin.")
