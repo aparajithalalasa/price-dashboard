@@ -72,39 +72,39 @@ st.sidebar.download_button(
     mime="application/pdf"
 )
 
-        # Chart
-        df = df.dropna(subset=['date', 'units_sold'])
-        df = df.sort_values('date')
-        df['date_ordinal'] = df['date'].map(pd.Timestamp.toordinal)
+       # Chart section with optional forecasting
+df = df.dropna(subset=['date', 'units_sold'])  # ✅ Make sure this is properly aligned
+df = df.sort_values('date')
+df['date_ordinal'] = df['date'].map(pd.Timestamp.toordinal)
 
-        fig = go.Figure()
-        fig.add_trace(go.Bar(x=df['date'], y=df['units_sold'], name="Units Sold"))
+fig = go.Figure()
+fig.add_trace(go.Bar(x=df['date'], y=df['units_sold'], name="Units Sold"))
 
-        if forecast and len(df) > 1:
-            # Prepare model
-            X = df[['date_ordinal']]
-            y = df['units_sold']
-            model = LinearRegression().fit(X, y)
+if forecast and len(df) > 1:
+    # Prepare model
+    X = df[['date_ordinal']]
+    y = df['units_sold']
+    model = LinearRegression().fit(X, y)
 
-            last_date = df['date'].max()
-            future_dates = pd.date_range(last_date + pd.Timedelta(days=1), periods=forecast_days)
-            future_ordinals = future_dates.map(pd.Timestamp.toordinal)
-            predictions = model.predict(future_ordinals.to_numpy().reshape(-1, 1))
+    last_date = df['date'].max()
+    future_dates = pd.date_range(last_date + pd.Timedelta(days=1), periods=forecast_days)
+    future_ordinals = future_dates.map(pd.Timestamp.toordinal)
+    predictions = model.predict(future_ordinals.to_numpy().reshape(-1, 1))
 
-            # Plot prediction line
-            fig.add_trace(go.Scatter(x=future_dates, y=predictions, mode='lines+markers',
-                                     name='Predicted Units Sold', line=dict(dash='dot')))
+    # Plot prediction line
+    fig.add_trace(go.Scatter(
+        x=future_dates,
+        y=predictions,
+        mode='lines+markers',
+        name='Predicted Units Sold',
+        line=dict(dash='dot')
+    ))
 
-        fig.update_layout(
-            title=f"📈 Sales Trend for Product {product_filter}",
-            xaxis_title="Date",
-            yaxis_title="Units Sold",
-            height=500
-        )
-        st.plotly_chart(fig, use_container_width=True)
+fig.update_layout(
+    title=f"📈 Sales Trend for Product {product_filter}",
+    xaxis_title="Date",
+    yaxis_title="Units Sold",
+    height=500
+)
 
-    else:
-        st.error(f"❌ Missing columns: {required_cols - set(df.columns)}")
-
-else:
-    st.info("📁 Please upload a CSV file to begin.")
+st.plotly_chart(fig, use_container_width=True)
