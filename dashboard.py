@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from sklearn.linear_model import LinearRegression
 import numpy as np
+import requests
 
 st.set_page_config(layout="wide")
 st.title("📊 Product Sales Dashboard with Forecasting")
