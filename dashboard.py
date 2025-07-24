@@ -5,33 +5,6 @@ import requests
 
 st.set_page_config(layout="wide")
 st.title("📊 Dashboard: Product Sales Overview")
-# --- Sidebar: About Me ---
-st.sidebar.header("👩‍💼 About Me")
-
-st.sidebar.markdown("""
-**Aparajitha Lalasa Molugu**  
-Data Analyst | 5+ Yrs Exp at Amazon  
-📍 Hyderabad, India
-
-📧 [Email me](mailto:aparajitha.lalasa@gmail.com)  
-🔗 [LinkedIn](https://www.linkedin.com/in/aparajitha-molugu-22543515a/)  
-💻 [GitHub](https://github.com/aparajithalalasa)
-""")
-
-resume_url = "https://raw.githubusercontent.com//aparajithalalasa/price-dashboard/main/Aparajitha_Lalasa_Molugu_Updated_Resume.pdf"
-try:
-    response = requests.get(resume_url)
-    if response.status_code == 200:
-        st.sidebar.download_button(
-            label="📄 Download Resume",
-            data=response.content,
-            file_name="Aparajitha_Resume.pdf",
-            mime="application/pdf"
-        )
-    else:
-        st.sidebar.warning("Resume not available at the moment.")
-except Exception:
-    st.sidebar.error("Error fetching resume.")
 
 # --- File Upload ---
 uploaded_file = st.file_uploader("📁 Upload a CSV file", type=["csv"])
