@@ -30,6 +30,7 @@ except:
 uploaded_file = st.file_uploader("📁 Upload a CSV file", type=["csv"])
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
+    df.columns = df.columns.str.strip().str.lower()
     if 'date' in df.columns:
         df['date'] = pd.to_datetime(df['date'], errors='coerce')
     st.session_state["df"] = df
