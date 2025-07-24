@@ -5,21 +5,7 @@ import requests
 
 st.set_page_config(layout="wide")
 st.title("📊 Dashboard: Product Sales Overview")
-"""
-# Sidebar - About Me
-st.sidebar.header("👩‍💼 About Me")
-st.sidebar.markdown("""
-**Aparajitha Lalasa Molugu**  
-Data Analyst | 5+ Yrs Exp at Amazon  
-📍 Hyderabad, India  
-📧 [Email](mailto:youremail@example.com)  
-🔗 [LinkedIn](https://linkedin.com/in/yourprofile)  
-💻 [GitHub](https://github.com/yourusername)
-""")
 
-# Download resume from raw GitHub
-resume_url = "https://raw.githubusercontent.com/aparajitha-lalasa/price-dashboard/main/Aparajitha_Resume.pdf"
-"""
 try:
     response = requests.get(resume_url)
     if response.status_code == 200:
