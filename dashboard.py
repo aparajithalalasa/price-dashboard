@@ -4,8 +4,7 @@ import plotly.graph_objects as go
 import requests
 
 st.set_page_config(layout="wide")
-st.title("📊 Product Sales Dashboard")
-
+st.title("📊 Dashboard: Product Sales Overview")
 # --- Sidebar: About Me ---
 st.sidebar.header("👩‍💼 About Me")
 
